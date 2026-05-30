@@ -30,9 +30,9 @@ impl VibeEmbedding {
     pub fn from_seed(seed: u64) -> Self {
         let mut dims = [0.0f32; 16];
         let mut s = seed;
-        for i in 0..16 {
+        for dim in &mut dims {
             s = s.wrapping_mul(6364136223846793005).wrapping_add(1);
-            dims[i] = ((s >> 32) as u32 as f32 / u32::MAX as f32) * 2.0 - 1.0;
+            *dim = ((s >> 32) as u32 as f32 / u32::MAX as f32) * 2.0 - 1.0;
         }
         Self { dims }
     }
@@ -82,8 +82,8 @@ impl VibeEmbedding {
     pub fn blend(&self, other: &Self, t: f32) -> Self {
         let t = t.clamp(0.0, 1.0);
         let mut out = [0.0f32; 16];
-        for i in 0..16 {
-            out[i] = self.dims[i] * (1.0 - t) + other.dims[i] * t;
+        for (o, (a, b)) in out.iter_mut().zip(self.dims.iter().zip(other.dims.iter())) {
+            *o = *a * (1.0 - t) + *b * t;
         }
         Self { dims: out }
     }
@@ -99,8 +99,8 @@ impl VibeEmbedding {
         }
         let mut out = [0.0f32; 16];
         for (emb, w) in embeddings.iter().zip(weights.iter()) {
-            for i in 0..16 {
-                out[i] += emb.dims[i] * w;
+            for (o, d) in out.iter_mut().zip(emb.dims.iter()) {
+                *o += *d * w;
             }
         }
         for x in &mut out {
